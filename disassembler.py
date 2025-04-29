@@ -147,7 +147,7 @@ def get_register_name(reg_num):
     return f"X{reg_num}"
 
 
-def format_r_type(name, fields):
+def format_r_type(name, fields, line_number=None):
     rm = get_register_name(fields["rm"])
     shamt = fields["shamt"]
     rn = get_register_name(fields["rn"])
@@ -177,36 +177,39 @@ def format_r_type(name, fields):
     return f"{name} {rd}, {rn}, {rm}"
 
 
-def format_i_type(name, fields):
+def format_i_type(name, fields, line_number=None):
     immediate = fields["immediate"]
     rn = get_register_name(fields["rn"])
     rd = get_register_name(fields["rd"])
     return f"{name} {rd}, {rn}, #{immediate}"
 
 
-def format_d_type(name, fields):
+def format_d_type(name, fields, line_number=None):
     address = fields["address"]
     rn = get_register_name(fields["rn"])
     rt = get_register_name(fields["rt"])
     return f"{name} {rt}, [{rn}, #{address}]"
 
 
-def format_b_type(name, fields):
+def format_b_type(name, fields, line_number):
     address = fields["address"]
-    return f"{name} {address}"
+    target_line = line_number + address
+    return f"{name} label{target_line}"
 
 
-def format_cb_type(name, fields):
+def format_cb_type(name, fields, line_number):
     address = fields["address"]
     rt = fields["rt"]
+
+    target_line = line_number + address
 
     if name == "B.cond":
         if rt in condition_codes:
             condition = condition_codes[rt]
-            return f"B.{condition} {address}"
+            return f"B.{condition} label{target_line}"
 
     rt = get_register_name(fields["rt"])
-    return f"{name} {rt}, {address}"
+    return f"{name} {rt}, label{target_line}"
 
 
 format_map = {
@@ -224,6 +227,8 @@ def main():
     # require input filename
     parser.add_argument("filename")
     args = parser.parse_args()
+
+    line_number = 1
 
     # open file and read in the first 4 bytes
     with open(args.filename, "rb") as f:
@@ -244,10 +249,12 @@ def main():
 
                     if type in decoder_map:
                         fields = decoder_map[type](instruction)
-                        formatted_instruction = format_map[type](name, fields)
+                        formatted_instruction = format_map[type](name, fields, line_number)
+                        print(f"label{line_number}:")
                         print(formatted_instruction)
 
             data = f.read(4)
+            line_number += 1
 
 
 if __name__ == "__main__":
