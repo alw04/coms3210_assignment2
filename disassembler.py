@@ -153,26 +153,18 @@ def format_r_type(name, fields, line_number=None):
     rn = get_register_name(fields["rn"])
     rd = get_register_name(fields["rd"])
 
-    if name == "BR":
-        return f"BR {rn}"
+    special_cases = {
+        "BR": f"BR {rn}",
+        "LSL": f"LSL {rd}, {rn}, #{shamt}",
+        "LSR": f"LSR {rd}, {rn}, #{shamt}",
+        "DUMP": "DUMP",
+        "HALT": "HALT",
+        "PRNL": "PRNL",
+        "PRNT": f"PRNT {rd}",
+    }
 
-    if name == "LSL":
-        return f"LSL {rd}, {rn}, #{shamt}"
-
-    if name == "LSR":
-        return f"LSR {rd}, {rn}, #{shamt}"
-
-    if name == "DUMP":
-        return "DUMP"
-
-    if name == "HALT":
-        return "HALT"
-
-    if name == "PRNL":
-        return "PRNL"
-
-    if name == "PRNT":
-        return f"PRNT {rd}"
+    if name in special_cases:
+        return special_cases[name]
 
     return f"{name} {rd}, {rn}, {rm}"
 
