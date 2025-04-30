@@ -16,7 +16,7 @@ opcodes = {
     0b11010110000: {"instruction": "BR", "type": "R"},
     0b10110101: {"instruction": "CBNZ", "type": "CB"},
     0b10110100: {"instruction": "CBZ", "type": "CB"},
-    0b01010100: {"instruction": "B.cond", "type": "CB"},  # not sure why this wasn't included in opcodes.txt
+    0b01010100: {"instruction": "B.cond", "type": "CB"},  # not sure why this wasn't in the provided opcodes.txt
     0b11111111110: {"instruction": "DUMP", "type": "R"},
     0b11001010000: {"instruction": "EOR", "type": "R"},
     0b1101001000: {"instruction": "EORI", "type": "I"},
@@ -199,6 +199,8 @@ def format_cb_type(name, fields, line_number):
         if rt in condition_codes:
             condition = condition_codes[rt]
             return f"B.{condition} label{target_line}"
+        else:
+            return f"WARNING: Unknown condition code for B.cond '{hex(rt)}'\nB.??? label{target_line}"
 
     rt = get_register_name(fields["rt"])
     return f"{name} {rt}, label{target_line}"
@@ -220,11 +222,10 @@ def main():
     parser.add_argument("filename")
     args = parser.parse_args()
 
-    line_number = 1
-
     # open file and read in the first 4 bytes
     with open(args.filename, "rb") as f:
         data = f.read(4)
+        line_number = 1
         while data:
             b0, b1, b2, b3 = data
             # manually construct a 32-bit integer correlating to an instruction
@@ -234,17 +235,26 @@ def main():
             opcode_8_bit = instruction >> 24 & 0xFF
             opcode_10_bit = instruction >> 22 & 0x3FF
             opcode_11_bit = instruction >> 21 & 0x7FF
+
+            found_valid_opcode = False
+
             for opcode in [opcode_6_bit, opcode_8_bit, opcode_10_bit, opcode_11_bit]:
                 if opcode in opcodes:
                     name = opcodes[opcode]["instruction"]
                     type = opcodes[opcode]["type"]
 
-                    if type in decoder_map:
-                        fields = decoder_map[type](instruction)
-                        formatted_instruction = format_map[type](name, fields, line_number)
-                        print(f"label{line_number}:")
-                        print(formatted_instruction)
+                    fields = decoder_map[type](instruction)
+                    formatted_instruction = format_map[type](name, fields, line_number)
+                    print(f"label{line_number}:")
+                    print(formatted_instruction)
 
+                    found_valid_opcode = True
+                    break
+
+            if not found_valid_opcode:
+                print(f"WARNING: Unknown opcode for instruction '{bin(instruction)}' (line {line_number})")
+
+            # read next 4 bytes (next instruction)
             data = f.read(4)
             line_number += 1
 
