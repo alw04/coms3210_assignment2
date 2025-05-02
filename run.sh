@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 disassembler.py $1
+python3 disassembler.py "$1"
