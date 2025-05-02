@@ -200,7 +200,7 @@ def format_cb_type(name, fields, line_number):
             condition = condition_codes[rt]
             return f"B.{condition} label{target_line}"
         else:
-            return f"WARNING: Unknown condition code for B.cond '{hex(rt)}'\nB.??? label{target_line}"
+            return f"WARNING: Unknown condition code for B.cond '{hex(rt)}' in 'B.??? label{target_line}'"
 
     rt = get_register_name(fields["rt"])
     return f"{name} {rt}, label{target_line}"
@@ -245,14 +245,13 @@ def main():
 
                     fields = decoder_map[type](instruction)
                     formatted_instruction = format_map[type](name, fields, line_number)
-                    print(f"label{line_number}:")
-                    print(formatted_instruction)
+                    print(f"label{line_number}:", formatted_instruction)
 
                     found_valid_opcode = True
                     break
 
             if not found_valid_opcode:
-                print(f"WARNING: Unknown opcode for instruction '{bin(instruction)}' (line {line_number})")
+                print(f"label{line_number}: WARNING: Unknown opcode for instruction '{bin(instruction)}'")
 
             # read next 4 bytes (next instruction)
             data = f.read(4)
